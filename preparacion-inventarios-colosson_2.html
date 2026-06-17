@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Preparación de Inventarios · Colosson</title>
+<style>
+/* ============================================================
+   COLOSSON · Asesoría de Preparación de Inventarios
+   Sistema de diseño · alineado al manual de marca
+   - Paleta: negro #0D0F0D / blanco / gris #8C8C8C + verde de acento
+   - Tipografía oficial: Poppins (Bold 700 títulos · Medium 500 cuerpo)
+   - Mono: "Space Mono" para SKUs, ubicaciones y datos
+   - Isotipo: SS entrelazado (vector incrustado, hereda currentColor)
+   Firma visual: cuadrícula de almacén (warehouse grid) que
+   evoca posiciones físicas A1/B2.
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+:root{
+  /* Fondo claro: la "tinta" es negra, el "papel" es blanco.
+     Conservo nombres --black/--white por compatibilidad pero
+     ahora --black = texto negro y --white = fondo papel. */
+  --black:#0D0F0D;          /* tinta principal (texto) */
+  --ink:#FFFFFF;            /* superficie de tarjetas/nodos */
+  --paper:#FFFFFF;          /* fondo de página */
+  --paper-2:#F4F5F2;        /* fondo sutil alterno */
+  --white:#0D0F0D;          /* alias: ahora el texto "claro" es tinta negra */
+  --grey:#5A5C5A;           /* gris de apoyo legible sobre blanco */
+  --grey-dim:#9A9C99;       /* gris tenue */
+  --line:rgba(13,15,13,.10);
+  --green:#0FA94E;          /* verde de acento ajustado para contraste sobre blanco */
+  --green-deep:#0F8F44;
+  --green-glow:rgba(15,169,78,.10);
+  --radius:14px;
+  --maxw:1180px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--paper);
+  color:var(--black);
+  font-family:'Poppins',system-ui,sans-serif;
+  font-weight:400;
+  line-height:1.62;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* Firma visual: cuadrícula de almacén de fondo */
+.grid-bg{
+  position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:
+    linear-gradient(rgba(13,15,13,.05) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(13,15,13,.05) 1px,transparent 1px);
+  background-size:64px 64px;
+  mask-image:radial-gradient(ellipse 90% 70% at 50% 0%,#000 30%,transparent 80%);
+}
+
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 28px;position:relative;z-index:2}
+
+/* Tipografía utilitaria */
+.mono{font-family:'Space Mono',monospace}
+.eyebrow{
+  font-family:'Space Mono',monospace;
+  font-size:.72rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--green);display:inline-flex;align-items:center;gap:10px;
+}
+.eyebrow::before{content:"";width:28px;height:1px;background:var(--green);display:inline-block}
+
+h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:700;line-height:1.1;letter-spacing:-.02em}
+
+/* ============ NAV ============ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px;
+  background:rgba(255,255,255,.72);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+  transition:padding .3s;
+}
+.brand{display:flex;align-items:center;gap:12px;font-family:'Poppins';font-weight:700;letter-spacing:-.01em;font-size:1.18rem}
+.iso-svg{height:26px;width:auto;display:block;color:var(--black)}
+.iso-svg path{fill:currentColor}
+.nav-tag{font-family:'Space Mono';font-size:.68rem;color:var(--grey);letter-spacing:.1em}
+@media(max-width:680px){.nav-tag{display:none}}
+
+/* ============ HERO ============ */
+.hero{
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  padding:140px 0 80px;position:relative;overflow:hidden;
+}
+.hero-glow{
+  position:absolute;top:-10%;right:-5%;width:60vw;height:60vw;max-width:760px;max-height:760px;
+  background:radial-gradient(circle,var(--green-glow),transparent 62%);
+  pointer-events:none;z-index:0;
+}
+.iso-watermark{
+  position:absolute;right:-4%;top:50%;transform:translateY(-46%);
+  width:min(54vw,720px);height:auto;color:var(--green);opacity:.07;z-index:0;pointer-events:none;
+}
+.iso-watermark path{fill:currentColor}
+@media(max-width:860px){.iso-watermark{opacity:.05;right:-18%;width:90vw}}
+.hero .status{
+  display:inline-flex;align-items:center;gap:9px;
+  font-family:'Space Mono';font-size:.72rem;color:var(--grey);
+  border:1px solid rgba(140,140,140,.22);border-radius:100px;padding:7px 15px;
+  margin-bottom:34px;width:fit-content;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+.hero h1{font-size:clamp(2.6rem,6.5vw,5.2rem);margin:8px 0 26px}
+.hero h1 .accent{color:var(--green)}
+.hero p.sub{font-size:clamp(1.05rem,2vw,1.35rem);color:var(--grey);max-width:640px;font-weight:400}
+.hero .meta-row{display:flex;gap:34px;margin-top:46px;flex-wrap:wrap}
+.meta-item{border-left:2px solid var(--green);padding-left:14px}
+.meta-item .n{font-family:'Poppins';font-size:1.9rem;font-weight:700}
+.meta-item .l{font-size:.78rem;color:var(--grey);font-family:'Space Mono';letter-spacing:.05em}
+
+.btn{
+  display:inline-flex;align-items:center;gap:11px;cursor:pointer;
+  font-family:'Poppins';font-weight:600;font-size:1rem;
+  background:var(--green);color:var(--black);border:none;
+  padding:16px 30px;border-radius:100px;margin-top:44px;
+  text-decoration:none;transition:transform .25s,box-shadow .25s;
+  box-shadow:0 0 0 rgba(31,224,107,0);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 40px var(--green-glow)}
+.btn svg{transition:transform .25s}
+.btn:hover svg{transform:translateX(4px)}
+.btn.ghost{background:transparent;color:var(--black);border:1px solid var(--line)}
+.btn.ghost:hover{border-color:var(--green);color:var(--green)}
+
+/* ============ SECCIONES ============ */
+section.block{padding:110px 0;position:relative}
+.sec-head{max-width:680px;margin-bottom:60px;position:relative;padding-left:20px}
+.sec-head::before{content:"";position:absolute;left:0;top:6px;bottom:6px;width:3px;border-radius:3px;background:var(--green)}
+.sec-head h2{font-size:clamp(2rem,4.5vw,3.2rem);margin:18px 0 16px}
+.sec-head p{color:var(--grey);font-size:1.08rem}
+.num-index{font-family:'Space Mono';color:var(--green-deep);font-size:.85rem;font-weight:700;letter-spacing:.04em}
+
+/* ---- Sección 1: comparación caos vs control ---- */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:780px){.compare{grid-template-columns:1fr}}
+.flow-card{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:32px;background:var(--paper-2);
+  position:relative;overflow:hidden;
+}
+.flow-card.bad{border-color:var(--line)}
+.flow-card.good{border-color:rgba(15,169,78,.45);background:rgba(15,169,78,.04)}
+.flow-card.good::before{
+  content:"";position:absolute;top:0;left:0;right:0;height:2px;background:var(--green);
+}
+.flow-card h3{font-size:1.15rem;margin-bottom:24px;display:flex;align-items:center;gap:10px}
+.flow-card.bad h3{color:var(--grey)}
+.flow-steps{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.fstep{
+  font-family:'Space Mono';font-size:.8rem;padding:9px 14px;border-radius:8px;
+  border:1px solid var(--line);background:#FFFFFF;white-space:nowrap;
+}
+.flow-card.good .fstep.last{border-color:var(--green);color:var(--green);background:var(--green-glow)}
+.flow-card.bad .fstep.last{color:#E0563D;border-color:rgba(224,86,61,.4)}
+.farrow{color:var(--grey-dim);font-size:1.1rem}
+.flow-card p{color:var(--grey);font-size:.95rem}
+
+/* ---- Sección 2: 12 pilares ---- */
+.pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:920px){.pillars{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:560px){.pillars{grid-template-columns:1fr}}
+.pillar{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px 24px;background:#FFFFFF;
+  transition:transform .3s,border-color .3s,box-shadow .3s;position:relative;overflow:hidden;
+  cursor:default;
+}
+.pillar::after{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%),var(--green-glow),transparent 45%);
+  opacity:0;transition:opacity .35s;pointer-events:none;
+}
+.pillar:hover{transform:translateY(-5px);border-color:rgba(15,169,78,.5);box-shadow:0 18px 40px rgba(13,15,13,.08)}
+.pillar:hover::after{opacity:1}
+.pillar .p-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.pillar .ico{
+  width:46px;height:46px;border-radius:11px;display:grid;place-items:center;
+  background:rgba(15,169,78,.1);border:1px solid rgba(15,169,78,.28);
+}
+.pillar .ico svg{width:22px;height:22px;stroke:var(--green)}
+.pillar .pn{font-family:'Space Mono';font-size:.78rem;color:var(--grey-dim)}
+.pillar h3{font-size:1.1rem;margin-bottom:10px}
+.pillar p{color:var(--grey);font-size:.9rem;margin-bottom:14px}
+.chip{
+  display:inline-block;font-family:'Space Mono';font-size:.72rem;
+  background:var(--paper-2);border:1px solid var(--line);
+  padding:4px 10px;border-radius:6px;margin:3px 4px 0 0;color:var(--black);
+}
+.pillar:hover .chip{border-color:rgba(15,169,78,.35)}
+
+/* ---- Sección 3: tabla maestra ---- */
+.table-wrap{
+  border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;
+  background:#FFFFFF;box-shadow:0 12px 30px rgba(13,15,13,.05);
+}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:720px}
+thead th{
+  font-family:'Space Mono';font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+  text-align:left;padding:16px 18px;color:var(--green-deep);
+  border-bottom:1px solid rgba(15,169,78,.3);background:rgba(15,169,78,.06);
+}
+tbody td{padding:15px 18px;border-bottom:1px solid var(--line);font-size:.9rem}
+tbody tr{transition:background .2s}
+tbody tr:hover{background:rgba(15,169,78,.05)}
+tbody tr:last-child td{border-bottom:none}
+td.sku{font-family:'Space Mono';color:var(--green-deep);font-weight:700}
+td.loc{font-family:'Space Mono';color:var(--black)}
+.stock-low{color:#D23A1E;font-weight:700}
+.badge-cat{font-size:.78rem;color:var(--grey)}
+
+/* ---- Sección 4: timeline ---- */
+.timeline{position:relative;padding-left:8px}
+.tl-line{position:absolute;left:25px;top:10px;bottom:10px;width:2px;background:linear-gradient(180deg,var(--green),rgba(15,169,78,.12))}
+.tl-step{display:flex;gap:24px;padding:14px 0;position:relative;align-items:flex-start}
+.tl-node{
+  width:50px;height:50px;flex:0 0 50px;border-radius:13px;
+  background:#FFFFFF;border:1px solid rgba(15,169,78,.4);box-shadow:0 4px 12px rgba(13,15,13,.06);
+  display:grid;place-items:center;font-family:'Poppins';font-weight:700;
+  color:var(--green-deep);position:relative;z-index:2;transition:all .3s;
+}
+.tl-step:hover .tl-node{background:var(--green);color:#FFFFFF;transform:scale(1.06)}
+.tl-body h3{font-size:1.05rem;margin-bottom:3px}
+.tl-body p{color:var(--grey);font-size:.88rem}
+
+/* ---- Sección 5: beneficios / contadores ---- */
+.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+@media(max-width:860px){.benefits{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.benefits{grid-template-columns:1fr}}
+.benefit{
+  border:1px solid var(--line);border-radius:var(--radius);
+  padding:30px 26px;background:#FFFFFF;transition:border-color .3s,box-shadow .3s;
+}
+.benefit:hover{border-color:rgba(15,169,78,.45);box-shadow:0 14px 34px rgba(13,15,13,.07)}
+.benefit .big{font-family:'Poppins';font-size:2.6rem;font-weight:700;color:var(--green-deep);line-height:1}
+.benefit .big .suf{font-size:1.4rem}
+.benefit h3{font-size:1rem;margin:14px 0 6px}
+.benefit p{color:var(--grey);font-size:.86rem}
+
+/* ---- Final CTA ---- */
+.final{
+  text-align:center;padding:140px 0;position:relative;
+  border-top:1px solid rgba(140,140,140,.12);
+}
+.final .eyebrow{justify-content:center}
+.final h2{font-size:clamp(2.2rem,5vw,4rem);max-width:850px;margin:22px auto 18px}
+.final h2 .accent{color:var(--green)}
+.final p{color:var(--grey);font-size:1.15rem;max-width:560px;margin:0 auto}
+.final .btn{margin-top:40px}
+
+footer{padding:40px 0;border-top:1px solid rgba(140,140,140,.1);text-align:center}
+footer p{color:var(--grey-dim);font-size:.8rem;font-family:'Space Mono'}
+
+/* ---- Reveal animation ---- */
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .7s cubic-bezier(.2,.7,.3,1),transform .7s cubic-bezier(.2,.7,.3,1)}
+.reveal.in{opacity:1;transform:none}
+.reveal.d1{transition-delay:.08s}.reveal.d2{transition-delay:.16s}.reveal.d3{transition-delay:.24s}
+
+@media(prefers-reduced-motion:reduce){
+  .reveal{opacity:1;transform:none;transition:none}
+  .dot,.btn{animation:none}
+  html{scroll-behavior:auto}
+}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<!-- ============ NAV ============ -->
+<nav>
+  <div class="brand">
+    <svg viewBox="0 0 780 602" xmlns="http://www.w3.org/2000/svg" class="iso-svg" role="img" aria-label="Colosson"><g transform="translate(0.000000,602.000000) scale(0.016667,-0.016667)" fill="currentColor"><path d="M6818 36026 c-7424 -1155 -9128 -11356 -2455 -14689 1598 -798 1350 -772 7787 -814 5486 -35 5522 -36 5910 -168 1218 -413 2230 -1503 2493 -2685 417 -1872 806 -2726 1771 -3892 1105 -1334 2583 -2243 4316 -2654 412 -98 1001 -110 6990 -141 l6540 -34 394 -134 c2874 -974 3143 -5150 416 -6453 -733 -350 -470 -339 -7770 -340 l-6780 0 -491 170 c-1138 397 -2021 1396 -2247 2544 l-69 352 -1948 -13 -1947 -14 40 -396 c319 -3166 2584 -5719 5792 -6529 586 -148 14187 -189 15020 -46 6635 1145 8483 9981 2860 13674 -1844 1212 -2039 1236 -9932 1236 -6544 0 -6244 -16 -7032 376 -1148 571 -1887 1601 -2152 2999 -549 2894 -2902 5294 -5874 5994 -212 50 -1927 82 -5850 109 -6083 43 -5817 26 -6567 405 -3038 1538 -2507 6242 807 7141 363 99 919 106 8010 106 l7620 0 431 -158 c1216 -445 2257 -1598 2484 -2754 l71 -358 1942 0 1942 0 0 232 c0 3102 -3007 6401 -6324 6939 -782 127 -15380 122 -16198 -5z M24319 26331 c-1025 -72 -2170 -375 -3007 -796 l-379 -190 349 -140 c1319 -532 2833 -1696 3357 -2583 l107 -182 7567 0 c8416 0 8015 18 8806 -402 727 -387 1487 -1373 1678 -2179 l71 -299 1936 0 c1851 0 1936 5 1936 112 0 250 -188 1169 -335 1631 -870 2755 -3249 4769 -5920 5011 -575 52 -15445 68 -16166 17z M0 16417 c0 -2691 2301 -5664 5111 -6603 1129 -378 587 -354 8599 -378 8449 -26 8466 -25 9784 502 479 192 481 183 -70 466 -1201 617 -2187 1487 -2794 2468 l-332 538 -6834 30 -6834 30 -404 157 c-1218 474 -2100 1510 -2285 2685 l-68 428 -1936 0 -1937 0 0 -323z"/></g></svg>
+    <span>COLOSSON</span>
+  </div>
+  <span class="nav-tag">ASESORÍA · CONTROL DE INVENTARIOS</span>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="hero-glow"></div>
+  <svg viewBox="0 0 780 602" xmlns="http://www.w3.org/2000/svg" class="iso-watermark" aria-hidden="true" ><g transform="translate(0.000000,602.000000) scale(0.016667,-0.016667)" fill="currentColor"><path d="M6818 36026 c-7424 -1155 -9128 -11356 -2455 -14689 1598 -798 1350 -772 7787 -814 5486 -35 5522 -36 5910 -168 1218 -413 2230 -1503 2493 -2685 417 -1872 806 -2726 1771 -3892 1105 -1334 2583 -2243 4316 -2654 412 -98 1001 -110 6990 -141 l6540 -34 394 -134 c2874 -974 3143 -5150 416 -6453 -733 -350 -470 -339 -7770 -340 l-6780 0 -491 170 c-1138 397 -2021 1396 -2247 2544 l-69 352 -1948 -13 -1947 -14 40 -396 c319 -3166 2584 -5719 5792 -6529 586 -148 14187 -189 15020 -46 6635 1145 8483 9981 2860 13674 -1844 1212 -2039 1236 -9932 1236 -6544 0 -6244 -16 -7032 376 -1148 571 -1887 1601 -2152 2999 -549 2894 -2902 5294 -5874 5994 -212 50 -1927 82 -5850 109 -6083 43 -5817 26 -6567 405 -3038 1538 -2507 6242 807 7141 363 99 919 106 8010 106 l7620 0 431 -158 c1216 -445 2257 -1598 2484 -2754 l71 -358 1942 0 1942 0 0 232 c0 3102 -3007 6401 -6324 6939 -782 127 -15380 122 -16198 -5z M24319 26331 c-1025 -72 -2170 -375 -3007 -796 l-379 -190 349 -140 c1319 -532 2833 -1696 3357 -2583 l107 -182 7567 0 c8416 0 8015 18 8806 -402 727 -387 1487 -1373 1678 -2179 l71 -299 1936 0 c1851 0 1936 5 1936 112 0 250 -188 1169 -335 1631 -870 2755 -3249 4769 -5920 5011 -575 52 -15445 68 -16166 17z M0 16417 c0 -2691 2301 -5664 5111 -6603 1129 -378 587 -354 8599 -378 8449 -26 8466 -25 9784 502 479 192 481 183 -70 466 -1201 617 -2187 1487 -2794 2468 l-332 538 -6834 30 -6834 30 -404 157 c-1218 474 -2100 1510 -2285 2685 l-68 428 -1936 0 -1937 0 0 -323z"/></g></svg>
+  <div class="wrap">
+    <div class="status reveal"><span class="dot"></span> Fase previa a la implementación del sistema</div>
+    <span class="eyebrow reveal">Preparación de datos</span>
+    <h1 class="reveal d1">Preparación de inventarios para una<br><span class="accent">implementación exitosa</span></h1>
+    <p class="sub reveal d2">Las decisiones que se toman <strong style="color:var(--black)">antes</strong> de instalar el sistema determinan el éxito del control de inventarios. Organizamos los datos primero; el software llega a un terreno ordenado.</p>
+    <div class="meta-row reveal d3">
+      <div class="meta-item"><div class="n">12</div><div class="l">pilares clave</div></div>
+      <div class="meta-item"><div class="n">8</div><div class="l">pasos del flujo</div></div>
+      <div class="meta-item"><div class="n">1</div><div class="l">base maestra</div></div>
+    </div>
+    <a href="#porque" class="btn reveal d3">Comenzar
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</header>
+
+<!-- ============ SECCIÓN 1 ============ -->
+<section class="block" id="porque">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="num-index">01 / Punto de partida</span>
+      <h2>¿Por qué organizar el inventario antes del software?</h2>
+      <p>El sistema no inventa orden: refleja y multiplica el estado en que recibe los datos. Si entra desorden, sale desorden a mayor velocidad.</p>
+    </div>
+    <div class="compare">
+      <div class="flow-card bad reveal">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
+          Sin preparación
+        </h3>
+        <div class="flow-steps">
+          <span class="fstep">Inventario desordenado</span>
+          <span class="farrow">→</span>
+          <span class="fstep">Sistema</span>
+          <span class="farrow">→</span>
+          <span class="fstep last">Caos digital</span>
+        </div>
+        <p>Duplicados, códigos inconsistentes y conteos que no cuadran. Cada reporte genera dudas en lugar de decisiones.</p>
+      </div>
+      <div class="flow-card good reveal d1">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          Con preparación
+        </h3>
+        <div class="flow-steps">
+          <span class="fstep">Inventario organizado</span>
+          <span class="farrow">→</span>
+          <span class="fstep">Sistema</span>
+          <span class="farrow">→</span>
+          <span class="fstep last">Control y trazabilidad</span>
+        </div>
+        <p>Cada producto identificado, ubicado y medido. El sistema arranca confiable desde el primer día y escala sin retrabajos.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECCIÓN 2 · 12 PILARES ============ -->
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="num-index">02 / Fundamentos</span>
+      <h2>Los 12 pilares de una buena implementación</h2>
+      <p>Cada pilar es una decisión que se toma una sola vez y se respeta siempre. Juntos forman la estructura sobre la que opera el software.</p>
+    </div>
+    <div class="pillars" id="pillars">
+      <!-- 1 -->
+      <article class="pillar reveal">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 17h7M17.5 14v7"/></svg></div><span class="pn">PILAR 01</span></div>
+        <h3>SKU único por producto</h3>
+        <p>Cada producto lleva un identificador único que nunca cambia, sin importar dónde se venda o almacene.</p>
+        <span class="chip">FER-TOR-001</span>
+      </article>
+      <!-- 2 -->
+      <article class="pillar reveal d1">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M16 3h5v5M21 3l-7 7M8 21H3v-5M3 21l7-7M3 8V3h5M3 3l7 7M16 21h5v-5M21 21l-7-7"/></svg></div><span class="pn">PILAR 02</span></div>
+        <h3>Una variante = un SKU</h3>
+        <p>Cada talla, color o presentación tiene su propio código. Nunca se mezclan variantes bajo un mismo identificador.</p>
+        <span class="chip">CAM-NEG-S</span><span class="chip">CAM-NEG-M</span><span class="chip">CAM-NEG-L</span>
+      </article>
+      <!-- 3 -->
+      <article class="pillar reveal d2">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="7" cy="6" r="1.5" fill="currentColor"/><circle cx="13" cy="12" r="1.5" fill="currentColor"/><circle cx="9" cy="18" r="1.5" fill="currentColor"/></svg></div><span class="pn">PILAR 03</span></div>
+        <h3>Categorías y subcategorías</h3>
+        <p>Agrupar productos por familias acelera búsquedas, reportes y decisiones de compra.</p>
+        <span class="chip">Ferretería › Tornillería</span>
+      </article>
+      <!-- 4 -->
+      <article class="pillar reveal">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 7l9-4 9 4-9 4-9-4Z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg></div><span class="pn">PILAR 04</span></div>
+        <h3>Unidades de medida definidas</h3>
+        <p>Una misma unidad para comprar, almacenar y vender. Sin ambigüedad entre caja, paquete y unidad.</p>
+        <span class="chip">UND</span><span class="chip">KG</span><span class="chip">CAJA-12</span>
+      </article>
+      <!-- 5 -->
+      <article class="pillar reveal d1">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M12 21s-7-6.5-7-11a7 7 0 0 1 14 0c0 4.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></div><span class="pn">PILAR 05</span></div>
+        <h3>Ubicaciones físicas</h3>
+        <p>Cada producto tiene una posición conocida: zona, estantería y nivel. Encontrar deja de depender de la memoria.</p>
+        <span class="chip">A1</span><span class="chip">A2</span><span class="chip">B1</span><span class="chip">B2</span>
+      </article>
+      <!-- 6 -->
+      <article class="pillar reveal d2">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><span class="pn">PILAR 06</span></div>
+        <h3>Inventario inicial real</h3>
+        <p>Contar físicamente todo antes de cargar el sistema. El primer dato debe ser verdad, no estimación.</p>
+        <span class="chip">Conteo 100% físico</span>
+      </article>
+      <!-- 7 -->
+      <article class="pillar reveal">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></div><span class="pn">PILAR 07</span></div>
+        <h3>Stock mínimo</h3>
+        <p>Un umbral por producto que dispara alertas a tiempo y evita quiebres o sobrestock.</p>
+        <span class="chip">Alerta automática</span>
+      </article>
+      <!-- 8 -->
+      <article class="pillar reveal d1">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="9" cy="7" r="3.5"/><path d="M2 21v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1"/><path d="M17 11l2 2 4-4"/></svg></div><span class="pn">PILAR 08</span></div>
+        <h3>Responsables del inventario</h3>
+        <p>Definir quién recibe, entrega y ajusta. Cada movimiento tiene un nombre detrás.</p>
+        <span class="chip">Recepción · Despacho · Ajustes</span>
+      </article>
+      <!-- 9 -->
+      <article class="pillar reveal d2">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2M9 20h6M12 4v16"/></svg></div><span class="pn">PILAR 09</span></div>
+        <h3>Nomenclatura estandarizada</h3>
+        <p>Nombres construidos siempre con la misma fórmula. Buscar y comparar se vuelve predecible.</p>
+        <span class="chip">[Producto]-[Color]-[Talla]</span>
+      </article>
+      <!-- 10 -->
+      <article class="pillar reveal">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12" y="8" width="3" height="10"/><rect x="17" y="4" width="3" height="14"/></svg></div><span class="pn">PILAR 10</span></div>
+        <h3>Clasificación ABC</h3>
+        <p>Identificar los productos críticos por valor o rotación para concentrar el control donde más importa.</p>
+        <span class="chip">A · alto</span><span class="chip">B · medio</span><span class="chip">C · bajo</span>
+      </article>
+      <!-- 11 -->
+      <article class="pillar reveal d1">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M8 5V3M16 5V3"/><circle cx="9" cy="14" r="2"/><path d="M14 16l2-2 5 5"/></svg></div><span class="pn">PILAR 11</span></div>
+        <h3>Registro fotográfico</h3>
+        <p>Una imagen por producto reduce errores de identificación en recepción, picking y despacho.</p>
+        <span class="chip">1 foto = 1 SKU</span>
+      </article>
+      <!-- 12 -->
+      <article class="pillar reveal d2">
+        <div class="p-top"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div><span class="pn">PILAR 12</span></div>
+        <h3>Base maestra de datos</h3>
+        <p>Una sola tabla limpia que reúne todo lo anterior. Es la fuente única de verdad que carga el sistema.</p>
+        <span class="chip">Single source of truth</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECCIÓN 3 · TABLA MAESTRA ============ -->
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="num-index">03 / El entregable</span>
+      <h2>Ejemplo de tabla maestra</h2>
+      <p>Así se ve un inventario listo para cargar: cada fila completa, consistente y sin huecos. Datos de ejemplo del sector ferretería y confección.</p>
+    </div>
+    <div class="table-wrap reveal d1">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th><th>Nombre</th><th>Categoría</th><th>Unidad</th><th>Ubicación</th><th>Stock inicial</th><th>Stock mínimo</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="sku">FER-TOR-001</td><td>Tornillo galvanizado 1/4"</td><td class="badge-cat">Ferretería</td><td class="mono">UND</td><td class="loc">A1</td><td>1 200</td><td>300</td></tr>
+            <tr><td class="sku">FER-TUE-014</td><td>Tuerca hexagonal 1/4"</td><td class="badge-cat">Ferretería</td><td class="mono">UND</td><td class="loc">A2</td><td>980</td><td>250</td></tr>
+            <tr><td class="sku">CAM-NEG-S</td><td>Camiseta negra · talla S</td><td class="badge-cat">Confección</td><td class="mono">UND</td><td class="loc">B1</td><td>45</td><td class="stock-low">20</td></tr>
+            <tr><td class="sku">CAM-NEG-M</td><td>Camiseta negra · talla M</td><td class="badge-cat">Confección</td><td class="mono">UND</td><td class="loc">B1</td><td>62</td><td>20</td></tr>
+            <tr><td class="sku">CAM-NEG-L</td><td>Camiseta negra · talla L</td><td class="badge-cat">Confección</td><td class="mono">UND</td><td class="loc">B2</td><td>18</td><td class="stock-low">20</td></tr>
+            <tr><td class="sku">PIN-BLA-4L</td><td>Pintura blanca mate</td><td class="badge-cat">Pinturas</td><td class="mono">CAJA-4</td><td class="loc">C1</td><td>34</td><td>10</td></tr>
+            <tr><td class="sku">HER-MAR-220</td><td>Martillo de uña 220g</td><td class="badge-cat">Herramienta</td><td class="mono">UND</td><td class="loc">C3</td><td>26</td><td>8</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECCIÓN 4 · FLUJO ============ -->
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="num-index">04 / Ruta de trabajo</span>
+      <h2>Flujo recomendado</h2>
+      <p>El orden importa: cada paso depende de que el anterior esté completo. Saltar etapas se paga con retrabajos.</p>
+    </div>
+    <div class="timeline">
+      <div class="tl-line"></div>
+      <div class="tl-step reveal"><div class="tl-node">1</div><div class="tl-body"><h3>Clasificar productos</h3><p>Definir categorías, subcategorías y clasificación ABC.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">2</div><div class="tl-body"><h3>Crear SKU</h3><p>Asignar un código único e inmutable por producto y variante.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">3</div><div class="tl-body"><h3>Definir ubicaciones</h3><p>Mapear zonas, estanterías y posiciones físicas en bodega.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">4</div><div class="tl-body"><h3>Realizar conteo físico</h3><p>Contar todo el inventario real, sin estimaciones.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">5</div><div class="tl-body"><h3>Construir base maestra</h3><p>Consolidar todo en una tabla única, limpia y validada.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">6</div><div class="tl-body"><h3>Cargar el sistema</h3><p>Importar la base maestra al software de control de inventarios.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">7</div><div class="tl-body"><h3>Capacitación</h3><p>Entrenar a los responsables en uso, ajustes y buenas prácticas.</p></div></div>
+      <div class="tl-step reveal"><div class="tl-node">8</div><div class="tl-body"><h3>Operación</h3><p>Operar con datos confiables y mejora continua sobre la base.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SECCIÓN 5 · BENEFICIOS ============ -->
+<section class="block">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="num-index">05 / Resultado</span>
+      <h2>Beneficios esperados</h2>
+      <p>Lo que cambia cuando el inventario llega ordenado al sistema. Indicadores de referencia para una implementación bien preparada.</p>
+    </div>
+    <div class="benefits" id="benefits">
+      <div class="benefit reveal"><div class="big" data-count="90"><span class="val">0</span><span class="suf">%</span></div><h3>Menos errores operativos</h3><p>Identificación y conteo confiables desde el inicio.</p></div>
+      <div class="benefit reveal d1"><div class="big" data-count="100"><span class="val">0</span><span class="suf">%</span></div><h3>Mayor trazabilidad</h3><p>Cada movimiento queda registrado y atribuible.</p></div>
+      <div class="benefit reveal d2"><div class="big" data-count="3"><span class="val">0</span><span class="suf">×</span></div><h3>Compras más inteligentes</h3><p>Decisiones basadas en stock mínimo y rotación real.</p></div>
+      <div class="benefit reveal"><div class="big" data-count="75"><span class="val">0</span><span class="suf">%</span></div><h3>Control de pérdidas</h3><p>Diferencias detectadas a tiempo, no a fin de año.</p></div>
+      <div class="benefit reveal d1"><div class="big" data-count="100"><span class="val">0</span><span class="suf">%</span></div><h3>Escalabilidad</h3><p>La estructura soporta crecer sin rehacer el catálogo.</p></div>
+      <div class="benefit reveal d2"><div class="big" data-count="24"><span class="val">0</span><span class="suf">/7</span></div><h3>Automatización futura</h3><p>Base lista para alertas, reportes y agentes inteligentes.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL ============ -->
+<section class="final">
+  <div class="wrap">
+    <span class="eyebrow reveal">El principio fundamental</span>
+    <h2 class="reveal d1">Un software no corrige un<br><span class="accent">inventario desordenado</span></h2>
+    <p class="reveal d2">Primero organizamos los datos. Luego automatizamos el proceso.</p>
+    <a href="#porque" class="btn reveal d2">Listos para implementar
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap"><p>COLOSSON · Automatización, Inteligencia Artificial &amp; Logística Internacional</p></div>
+</footer>
+
+<script>
+/* ---- Reveal on scroll ---- */
+const io = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target);} });
+},{threshold:.12, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---- Pillar hover spotlight (sigue el cursor) ---- */
+document.querySelectorAll('.pillar').forEach(p=>{
+  p.addEventListener('mousemove', e=>{
+    const r = p.getBoundingClientRect();
+    p.style.setProperty('--mx', (e.clientX-r.left)+'px');
+    p.style.setProperty('--my', (e.clientY-r.top)+'px');
+  });
+});
+
+/* ---- Contadores animados ---- */
+const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const animateCount = (el)=>{
+  const target = parseFloat(el.dataset.count);
+  const valEl = el.querySelector('.val');
+  if(prefersReduced){ valEl.textContent = target; return; }
+  const dur = 1300, start = performance.now();
+  const tick = (now)=>{
+    const t = Math.min((now-start)/dur,1);
+    const eased = 1-Math.pow(1-t,3);
+    valEl.textContent = Math.round(target*eased);
+    if(t<1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+};
+const cio = new IntersectionObserver((entries)=>{
+  entries.forEach(e=>{ if(e.isIntersecting){ animateCount(e.target.querySelector('.big')); cio.unobserve(e.target);} });
+},{threshold:.5});
+document.querySelectorAll('#benefits .benefit').forEach(b=>cio.observe(b));
+
+/* ---- Nav shrink al hacer scroll ---- */
+const navEl = document.querySelector('nav');
+addEventListener('scroll', ()=>{ navEl.style.padding = scrollY>40 ? '12px 28px' : '18px 28px'; });
+</script>
+</body>
+</html>
